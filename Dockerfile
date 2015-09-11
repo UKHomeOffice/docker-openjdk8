@@ -17,4 +17,8 @@ RUN YUM_CMD="yum install -y java-1.8.0-openjdk.x86_64" && \
     YUM_CMD="yum clean all" && \
     (${YUM_CMD} || ${YUM_CMD})
 
-ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.51-1.b16.el7_1.x86_64/jre/bin/java
+ENV JAVA_HOME /usr/lib/jvm/jre-openjdk
+
+VOLUME ["/root/.gradle/caches"]
+VOLUME ["/code"]
+WORKDIR /code
