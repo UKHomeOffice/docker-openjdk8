@@ -1,5 +1,7 @@
 # Docker Java JDK Container
 
+[![Build Status](https://travis-ci.org/UKHomeOffice/docker-openjdk8.svg?branch=master)](https://travis-ci.org/UKHomeOffice/docker-openjdk8)
+
 Docker container that also includes Open Java 8 *JDK* install for running containerized builds.
 
 ## Getting Started
