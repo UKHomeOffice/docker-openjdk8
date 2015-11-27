@@ -27,7 +27,6 @@ docker run -i --rm=true \
         -v ${GRADLE_CACHE}:/root/.gradle/caches \
         quay.io/ukhomeofficedigital/openjdk8:v0.1.2 \
         ./gradlew "$@"
-fi
 ```
 
 ## Contributing
