@@ -1,30 +1,23 @@
 pipeline:
   build_docker_image:
-    image: docker:1.11
+    image: docker:17.07.0
     environment:
-      - DOCKER_HOST=tcp://127.0.0.1:2375
+      - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
       - docker build -t openjdk8 .
     when:
-      event: [push, tag]
+      event: [push, pull_request]
 
   image_to_quay:
-    image: docker:1.11
+    image: docker:17.07.0
+    secrets: [ docker_password ]
     environment:
-      - DOCKER_HOST=tcp://127.0.0.1:2375
+      - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
-      - docker login -u="ukhomeofficedigital+drone" -p=${DOCKER_PASSWORD} quay.io
-      - docker tag openjdk8 quay.io/ukhomeofficedigital/openjdk8:${DRONE_TAG}
+      - docker login -u="ukhomeofficedigital+drone" -p=$${DOCKER_PASSWORD} quay.io
+      - docker tag openjdk8 quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
       - docker tag openjdk8 quay.io/ukhomeofficedigital/openjdk8:latest
-      - docker push quay.io/ukhomeofficedigital/openjdk8:${DRONE_TAG}
+      - docker push quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
       - docker push quay.io/ukhomeofficedigital/openjdk8:latest
     when:
       event: tag
-
-services:
-  dind:
-    image: docker:1.11-dind
-    privileged: true
-    command:
-      - "-s"
-      - "overlay"
