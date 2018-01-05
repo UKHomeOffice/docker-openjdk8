@@ -4,7 +4,7 @@ pipeline:
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
-      - docker build -t openjdk8 .
+      - docker build -t openjdk8:$${DRONE_COMMIT_SHA} .
     when:
       event: [push, pull_request]
 
@@ -31,7 +31,7 @@ pipeline:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
       - docker login -u="ukhomeofficedigital+drone" -p=$${DOCKER_PASSWORD} quay.io
-      - docker tag openjdk8 quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
+      - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
       - docker push quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
     when:
       event: tag
