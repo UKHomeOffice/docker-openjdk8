@@ -1,6 +1,6 @@
 pipeline:
   build_docker_image:
-    image: docker:17.07.0
+    image: docker:17.09.1
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
@@ -9,15 +9,29 @@ pipeline:
       event: [push, pull_request]
 
   image_to_quay:
-    image: docker:17.07.0
+    image: docker:17.09.1
+    secrets:
+      - docker_password
+    environment:
+      - DOCKER_HOST=tcp://172.17.0.1:2375
+    commands:
+      - docker login -u="ukhomeofficedigital+drone" -p=$${DOCKER_PASSWORD} quay.io
+      - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:$${DRONE_COMMIT_SHA}
+      - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:latest
+      - docker push quay.io/ukhomeofficedigital/openjdk8:$${DRONE_COMMIT_SHA}
+      - docker push quay.io/ukhomeofficedigital/openjdk8:latest
+    when:
+      event: push
+      branch: master
+
+  tagged_image_to_quay:
+    image: docker:17.09.1
     secrets: [ docker_password ]
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
       - docker login -u="ukhomeofficedigital+drone" -p=$${DOCKER_PASSWORD} quay.io
       - docker tag openjdk8 quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
-      - docker tag openjdk8 quay.io/ukhomeofficedigital/openjdk8:latest
       - docker push quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
-      - docker push quay.io/ukhomeofficedigital/openjdk8:latest
     when:
       event: tag
