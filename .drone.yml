@@ -1,25 +1,76 @@
-pipeline:
-  build_image:
-    environment:
-      - DOCKER_USERNAME=ukhomeofficedigital+drone
-    image: quay.io/ukhomeofficedigital/drone-docker
-    registry: quay.io
-    repo: quay.io/ukhomeofficedigital/openjdk8
-    secrets: [ DOCKER_PASSWORD ]
-    tags:
-      - ${DRONE_COMMIT_SHA}
-    when:
-      event: push
+---
+kind: pipeline
+name: default
+type: kubernetes
 
-  build_image_tag:
-    environment:
-      - DOCKER_USERNAME=ukhomeofficedigital+drone
-    image: quay.io/ukhomeofficedigital/drone-docker
-    registry: quay.io
-    repo: quay.io/ukhomeofficedigital/openjdk8
-    secrets: [ DOCKER_PASSWORD ]
-    tags:
-      - ${DRONE_TAG}
-      - latest
-    when:
-      event: tag
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+
+- name: build_docker_image
+  pull: if-not-exists
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  commands:
+  - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
+  - docker build -t openjdk8:$${DRONE_COMMIT_SHA} .
+  when:
+    event:
+    - push
+    - tag
+
+- name: scan
+  pull: if-not-exists
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission
+  settings:
+    image_name: openjdk8:${DRONE_COMMIT_SHA}
+    whitelist: CVE-2019-5827, CVE-2020-14363, CVE-2021-25215
+  when:
+    event:
+    - push
+
+- name: image_to_quay
+  pull: if-not-exists
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  commands:
+  - docker login -u="ukhomeofficedigital+drone" -p=$${DOCKER_PASSWORD} quay.io
+  - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:$${DRONE_COMMIT_SHA}
+  - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:latest
+  - docker push quay.io/ukhomeofficedigital/openjdk8:$${DRONE_COMMIT_SHA}
+  - docker push quay.io/ukhomeofficedigital/openjdk8:latest
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+- name: tagged_image_to_quay
+  pull: if-not-exists
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  commands:
+  - docker login -u="ukhomeofficedigital+drone" -p=$${DOCKER_PASSWORD} quay.io
+  - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
+  - docker tag openjdk8:$${DRONE_COMMIT_SHA} quay.io/ukhomeofficedigital/openjdk8:latest
+  - docker push quay.io/ukhomeofficedigital/openjdk8:$${DRONE_TAG}
+  - docker push quay.io/ukhomeofficedigital/openjdk8:latest
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+  when:
+    event:
+    - tag
+
+services:
+- name: docker
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind:latest
+
+- name: anchore-submission-server
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  pull: always
+  commands:
+    - /run.sh server
+
