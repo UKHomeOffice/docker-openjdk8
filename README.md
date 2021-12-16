@@ -1,5 +1,7 @@
 # Docker Java JDK Container
 
+**Deprecation notice: This repo is no longer maintained by ACP. You’re welcome to fork it according to your own needs.**
+
 Docker container that also includes Open Java 8 *JDK* install for running containerized builds.
 
 ## Getting Started
